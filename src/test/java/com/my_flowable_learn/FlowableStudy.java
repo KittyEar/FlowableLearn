@@ -3,9 +3,11 @@ package com.my_flowable_learn;
 
 import liquibase.pro.packaged.M;
 import org.flowable.engine.*;
+import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.junit.Before;
@@ -41,7 +43,7 @@ public class FlowableStudy {
         processEngineConfiguration = applicationContext.getBean("processEngineConfiguration", ProcessEngineConfiguration.class);
     }
     /**
-     * 部署流程Deploy
+     * 部署流程Deploy,蓝图
      */
     @Test
     public void deployProcessEngine() {
@@ -64,7 +66,7 @@ public class FlowableStudy {
         RepositoryService repositoryService = processEngine.getRepositoryService();
         ProcessDefinition processDefinition = repositoryService
                 .createProcessDefinitionQuery()
-                .deploymentId("5001")
+                .deploymentId("1")
                 .singleResult();
         log.info("Process Definition DeploymentId: {}", processDefinition.getDeploymentId());
         log.info("Process Definition Name: {}", processDefinition.getName());
@@ -121,6 +123,18 @@ public class FlowableStudy {
             log.info("Task Name: {}", task.getName());
             log.info("Task Description: {}", task.getDescription());
         }
+        List<Execution> executions = processEngine.getRuntimeService().createExecutionQuery().list();
+        for (Execution execution : executions) {
+            log.info("Execution ID: {}", execution.getId());
+            log.info("Execution Name: {}", execution.getName());
+            log.info("Execution Description: {}", execution.getDescription());
+            log.info("Execution ProcessInstanceId: {}", execution.getProcessInstanceId());
+            log.info("Execution ActivityId: {}", execution.getActivityId());
+            log.info("Execution IsEnded {}",execution.isEnded());
+            log.info("Execution IsSuspended {}",execution.isSuspended());
+            log.info("Execution ParentId {}",execution.getParentId());
+        }
+
 
     }
     /**
@@ -141,6 +155,24 @@ public class FlowableStudy {
 
         variables.put("approved", false);
         taskService.complete(task.getId(), variables);
+    }
+
+    /**
+     * 查询历史记录  queryHistory
+     */
+    @Test
+    public void queryHistory() {
+        ProcessEngine processEngine = processEngineConfiguration.buildProcessEngine();
+
+        HistoryService historyService = processEngine.getHistoryService();
+
+        List<HistoricActivityInstance> historicActivityInstanceList = historyService
+                .createHistoricActivityInstanceQuery()
+                .processInstanceId("2501")
+                .finished()
+                .orderByHistoricActivityInstanceEndTime().asc()
+                .list();
+        historicActivityInstanceList.forEach(historic -> log.info("Historic Activity Instance ID: {}, \n ActivityId: {} \n ActivityName: {}\n Assignee: {} \n DurationInMillis: {}", historic.getId(),historic.getActivityId(),historic.getActivityName(),historic.getAssignee(),historic.getDurationInMillis()));
     }
 
 }
